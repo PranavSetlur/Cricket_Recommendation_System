@@ -1,4 +1,7 @@
-const BASE = '/api'
+// In local dev, '/api' is proxied to Flask by vite.config.js. In production
+// (Vercel/Netlify), set VITE_API_BASE to the deployed API's full origin,
+// e.g. https://your-space.hf.space — there's no dev proxy in a static build.
+const BASE = `${import.meta.env.VITE_API_BASE || ''}/api`
 
 async function getJSON(url) {
   const res = await fetch(url)

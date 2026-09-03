@@ -1,0 +1,9 @@
+.venv/
+frontend/
+node_modules/
+.git/
+*.csv
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+evaluate.py
