@@ -1,50 +1,59 @@
 # Cricket Article Recommendations System
 
-This system provides recommendations for cricket-related articles based on user input and allows searching through a comprehensive database of articles. You can find the app here - https://psetlur6.pythonanywhere.com/. Read more about the app here - https://between22yards.wordpress.com/2024/07/27/cricket-content-curator/.
+Pick a cricket article you like, get more like it. Content-based recommendations
+over ESPNcricinfo articles, backed by sentence embeddings and a SQLite database
+that grows incrementally — no static, one-time dataset.
 
-## Setup Instructions
+## How it works
 
-### Prerequisites
+- `db.py` — SQLite schema (`articles.db`). Each article has a unique `url`
+  (the dedup key) and a stored sentence-embedding vector.
+- `ingest.py` — ingestion, safe to rerun any time:
+  - `python ingest.py seed --csv articles_full.csv` — one-time bulk import of
+    an existing articles CSV (title, link, summary, date columns).
+  - `python ingest.py scrape --pages 5` — scrape the newest N listing pages
+    from ESPNcricinfo and insert only articles not already in the database.
+- `app.py` — Flask JSON API. Recommendations are computed on demand (cosine
+  similarity against the in-memory embedding matrix), not precomputed and
+  cached — so a newly ingested article is recommendable immediately, without
+  restarting the app.
+- `frontend/` — React (Vite) UI that talks to the API.
 
-- Python (version 3.6 or higher)
-- Flask framework
-- Pandas library
-- numpy library
+## Setup
 
-### Installation
-
-1. **Clone the repository:**
-
-   ```
-   git clone https://github.com/PranavSetlur/Cricket_Content_Recommendation_System.git
-   cd Cricket_Content_Recoomendation_System
-   ```
-2. **Install Python dependencies:**
+### Backend
 
 ```
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+
+# seed the database (only needed once, or after a fresh clone)
+python ingest.py seed --csv articles_full.csv
+
+# pull in newer articles at any time
+python ingest.py scrape --pages 5
+
+python app.py
 ```
-3. **Run the Application**
-   ```
-   python app.py
-   ```
-This command starts the Flask development server. By default, the application runs on http://localhost:5000.
+
+The API runs on **http://localhost:5001** (not 5000 — macOS's AirPlay
+Receiver squats on port 5000 by default, which will silently swallow
+requests).
+
+### Frontend
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The Vite dev server proxies `/api/*` requests to
+the Flask backend on port 5001.
 
 ## Usage
-Access the Application:
 
-Open a web browser and go to http://localhost:5000 to access the application.
-
-### Recommendations:
-
-1. Enter an article title in the input field on the "Recommendations" tab.
-2. Specify the number of recommendations you wish to retrieve.
-3. Click on the "Get Recommendations" button to see a list of recommended articles.
-
-### Article Database
-1. Navigate to the "Article Database" tab.
-2. Use the search fields to filter articles by title and summary
-3. The articles matching your search criteria will be displayed in a table format with columns for the title, summary, and published daye
-4. Use the paginated controls at the bottom to navigate through the pages of articles.
-
-You can also use the article database tab to find the title of a specific article you want recommended for you.
+Search for an article by title or summary, click it, and the right-hand
+column shows similar articles ranked by embedding similarity. Click through
+to read the full article on ESPNcricinfo.
